@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="SsdbClient"
-	ProjectGUID="{DC3FF708-69B4-440B-A9F7-9E8867FAE5BC}"
-	RootNamespace="SsdbClient"
+	Name="SsdbClientTest"
+	ProjectGUID="{B805DBDB-FE0C-40EF-B804-35BC7DC01928}"
+	RootNamespace="SsdbClientTest"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -18,9 +18,9 @@
 	<Configurations>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(SolutionDir)\Output"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="4"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -38,18 +38,17 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				DebugInformationFormat="0"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -61,12 +60,20 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
-				LinkLibraryDependencies="true"
-				OutputFile="$(OutDir)\libssdbclient_x64.lib"
+				Name="VCLinkerTool"
+				AdditionalDependencies=".\Output\libssdbclient_x64.lib"
+				LinkIncremental="1"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -78,6 +85,9 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -86,23 +96,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\buffer.c"
-			>
-		</File>
-		<File
-			RelativePath=".\buffer.h"
-			>
-		</File>
-		<File
-			RelativePath=".\socketlibtypes.h"
-			>
-		</File>
-		<File
-			RelativePath=".\ssdb_client.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\ssdb_client.h"
+			RelativePath=".\main.cpp"
 			>
 		</File>
 	</Files>

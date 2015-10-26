@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SsdbClient", "SsdbClient.vcproj", "{DC3FF708-69B4-440B-A9F7-9E8867FAE5BC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SsdbClientTest", "SsdbClientTest.vcproj", "{B805DBDB-FE0C-40EF-B804-35BC7DC01928}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Release|x64 = Release|x64
@@ -10,6 +12,7 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{DC3FF708-69B4-440B-A9F7-9E8867FAE5BC}.Release|x64.ActiveCfg = Release|x64
 		{DC3FF708-69B4-440B-A9F7-9E8867FAE5BC}.Release|x64.Build.0 = Release|x64
+		{B805DBDB-FE0C-40EF-B804-35BC7DC01928}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
