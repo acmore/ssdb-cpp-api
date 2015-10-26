@@ -10,13 +10,28 @@ void test_kv(SSDBClient &client)
 {
 	string key("test_key");
 	string value("hello_ssdb");
-	Status s = client.set(key, value);
+	string expectValue;
+	Status s = client.get(key, &expectValue);
+	if (s.not_found())
+	{
+		std::cout << "setx should be fine" << std::endl;
+	}
+	else
+	{
+		std::cout << "key existed" << std::endl;
+		s = client.del(key);
+		if (!s.ok())
+		{
+			std::cout << "delete existing key failed" << std::endl;
+			return;
+		}
+	}
+	s = client.set(key, value);
 	if (!s.ok())
 	{
 		std::cout << "set fail" << std::endl;
 		return;
 	}
-	string expectValue;
 	s = client.get(key, &expectValue);
 	if (!s.ok() || s.not_found())
 	{
@@ -26,6 +41,31 @@ void test_kv(SSDBClient &client)
 	if (expectValue != value)
 	{
 		std::cout << "get value not the same" << std::endl;
+		return;
+	}
+	s = client.del(key);
+	if (!s.ok())
+	{
+		std::cout << "del value fail" << std::endl;
+		return;
+	}
+	s = client.get(key, &expectValue);
+	if (!s.not_found())
+	{
+		std::cout << "del value fail to delete" << std::endl;
+		return;
+	}
+	s = client.setx(key, value, 5);
+	if (!s.ok())
+	{
+		std::cout << "setx fail" << std::endl;
+		return;
+	}
+	expectValue.clear();
+	s = client.get(key, &expectValue);
+	if (!s.ok() || expectValue != value)
+	{
+		std::cout << "setx failed to set value" << std::endl;
 		return;
 	}
 }

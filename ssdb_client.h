@@ -73,8 +73,9 @@ public:
     void                    execute(const char* str, int len);
 
     Status                  set(const std::string& key, const std::string& val);
-
+	Status					setx(const std::string& key, const std::string& val, int ttl);
     Status                  get(const std::string& key, std::string *val);
+	Status					del(const std::string& key);
 
     Status                  hset(const std::string& name, const std::string& key, std::string val);
 	Status                  multiHset(const std::string& name, const std::map<std::string, std::string> &kvs);

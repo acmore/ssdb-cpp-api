@@ -105,6 +105,13 @@ public:
         appendStr(str);
     }
 
+	void appendInt32(int val)
+	{
+		char str[16];
+		snprintf(str, sizeof(str), "%d", val);
+		appendStr(str);
+	}
+
     void appendStr(const string& str)
     {
         char len[16];
@@ -483,6 +490,18 @@ Status SSDBClient::set(const std::string& key, const std::string& val)
     return m_reponse->getStatus();
 }
 
+Status SSDBClient::setx(const std::string& key, const std::string& val, int ttl)
+{
+	m_request->appendStr("setx");
+	m_request->appendStr(key);
+	m_request->appendStr(val);
+	m_request->appendInt32(ttl);
+	m_request->endl();
+
+	request(m_request->getResult(), m_request->getResultLen());
+	return m_reponse->getStatus();
+}
+
 Status SSDBClient::get(const std::string& key, std::string *val)
 {
     m_request->appendStr("get");
@@ -492,6 +511,17 @@ Status SSDBClient::get(const std::string& key, std::string *val)
     request(m_request->getResult(), m_request->getResultLen());
 
     return read_str(m_reponse, val);
+}
+
+Status SSDBClient::del(const std::string& key)
+{
+	m_request->appendStr("del");
+	m_request->appendStr(key);
+	m_request->endl();
+
+	request(m_request->getResult(), m_request->getResultLen());
+
+	return m_reponse->getStatus();
 }
 
 Status SSDBClient::hset(const std::string& name, const std::string& key, std::string val)
