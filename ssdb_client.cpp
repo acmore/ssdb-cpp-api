@@ -88,9 +88,9 @@ public:
         m_request = NULL;
     }
 
-    void        appendStr(const char* str)
+    void appendStr(const char* str)
     {
-        int len = strlen(str);
+        int len = (int)strlen(str);
         char lenstr[16];
         int num = snprintf(lenstr, sizeof(len), "%d\n", len);
         appendBlock(lenstr, num);
@@ -98,28 +98,28 @@ public:
         appendBlock("\n", 1);
     }
 
-    void        appendInt64(int64_t val)
+    void appendInt64(int64_t val)
     {
         char str[30];
         snprintf(str, sizeof(str), "%lld", val);
         appendStr(str);
     }
 
-    void        appendStr(const string& str)
+    void appendStr(const string& str)
     {
         char len[16];
         int num = snprintf(len, sizeof(len), "%d\n", (int)str.size());
         appendBlock(len, num);
-        appendBlock(str.c_str(), str.length());
+        appendBlock(str.c_str(), (int)str.length());
         appendBlock("\n", 1);
     }
 
-    void        endl()
+    void endl()
     {
         appendBlock("\n", 1);
     }
 
-    void        appendBlock(const char* data, int len)
+    void appendBlock(const char* data, int len)
     {
         if (ox_buffer_getwritevalidcount(m_request) < len)
         {
@@ -133,16 +133,16 @@ public:
         ox_buffer_write(m_request, data, len);
     }
 
-    const char*     getResult()
+    const char* getResult()
     {
         return ox_buffer_getreadptr(m_request);
     }
-    int             getResultLen()
+    int getResultLen()
     {
         return ox_buffer_getreadvalidcount(m_request);
     }
 
-    void            init()
+    void init()
     {
         ox_buffer_init(m_request);
     }
@@ -163,12 +163,12 @@ public:
     {
     }
 
-    void                init()
+    void init()
     {
         mBuffers.clear();
     }
 
-    void                parse(const char* buffer, int len)
+    void parse(const char* buffer, int len)
     {
         const char* current = buffer;
         while (true)
@@ -192,7 +192,7 @@ public:
         }
     }
 
-    Bytes*       getByIndex(size_t index)
+    Bytes* getByIndex(size_t index)
     {
         if(mBuffers.size() > index)
         {
@@ -201,17 +201,17 @@ public:
         else
         {
             const char* nullstr = "null";
-            static  Bytes nullbuffer = { nullstr, strlen(nullstr)+1 };
+            static  Bytes nullbuffer = { nullstr, (int)strlen(nullstr)+1 };
             return &nullbuffer;
         }
     }
 
-    size_t      getBuffersLen() const
+    size_t getBuffersLen() const
     {
         return mBuffers.size();
     }
 
-    Status       getStatus()
+    Status getStatus()
     {
         if(mBuffers.empty())
         {
@@ -258,7 +258,7 @@ public:
             {
                 /*  收到完整消息,ok  */
                 current += 1;         /*  跳过\n    */
-                return (current - buffer);
+                return (int)(current - buffer);
             }
         }
 
@@ -451,7 +451,7 @@ void SSDBClient::connect(const char* ip, int port)
 {
     if(m_socket == SOCKET_ERROR)
     {
-        m_socket = ox_socket_connect(ip, port);
+        m_socket = (int)ox_socket_connect(ip, port);
         if(m_socket != SOCKET_ERROR)
         {
             ox_socket_nodelay(m_socket);
@@ -507,14 +507,14 @@ Status SSDBClient::hset(const std::string& name, const std::string& key, std::st
     return m_reponse->getStatus();
 }
 
-Status SSDBClient::multiHset(const std::string& name, const std::unordered_map<std::string, std::string> &kvs)
+Status SSDBClient::multiHset(const std::string& name, const std::map<std::string, std::string> &kvs)
 {
     m_request->appendStr("multi_hset");
     m_request->appendStr(name);
-    for (auto& v : kvs)
+	for (std::map<std::string, std::string>::const_iterator iter = kvs.begin(); iter != kvs.end(); ++iter)
     {
-        m_request->appendStr(v.first);
-        m_request->appendStr(v.second);
+        m_request->appendStr(iter->first);
+        m_request->appendStr(iter->second);
     }
     m_request->endl();
 
@@ -539,9 +539,9 @@ Status SSDBClient::multiHget(const std::string& name, const std::vector<std::str
 {
     m_request->appendStr("multi_hget");
     m_request->appendStr(name);
-    for (auto& v : keys)
+    for (size_t i = 0; i < keys.size(); i++)
     {
-        m_request->appendStr(v);
+        m_request->appendStr(keys[i]);
     }
     m_request->endl();
 

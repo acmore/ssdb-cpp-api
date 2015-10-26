@@ -3,8 +3,22 @@
 
 #include <vector>
 #include <string>
-#include <unordered_map>
+#include <map>
+
+#ifdef PLATFORM_WINDOWS
+typedef char int8_t;
+typedef unsigned char uint8_t;
+typedef unsigned char byte;
+typedef short int int16_t;
+typedef unsigned short int uint16_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
+typedef unsigned int uint;
+typedef long long int int64_t;
+typedef unsigned long long int uint64_t;
+#else
 #include <stdint.h>
+#endif
 
 /*  同步ssdb client api   */
 
@@ -63,7 +77,7 @@ public:
     Status                  get(const std::string& key, std::string *val);
 
     Status                  hset(const std::string& name, const std::string& key, std::string val);
-    Status                  multiHset(const std::string& name, const std::unordered_map<std::string, std::string> &kvs);
+	Status                  multiHset(const std::string& name, const std::map<std::string, std::string> &kvs);
     Status                  hget(const std::string& name, const std::string& key, std::string *val);
     Status                  multiHget(const std::string& name, const std::vector<std::string> &keys, std::vector<std::string> *ret);
 
