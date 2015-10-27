@@ -481,6 +481,25 @@ static Status read_int64(SSDBProtocolResponse *response, int64_t *ret)
     return status;
 }
 
+static Status read_int(SSDBProtocolResponse *response, int *ret)
+{
+	Status s = response->getStatus();
+	if (s.ok())
+	{
+		if (response->getBuffersLen() >= 2)
+		{
+			Bytes* buf = response->getByIndex(1);
+			string temp(buf->buffer, buf->len);
+			sscanf(temp.c_str(), "%d", ret);
+		}
+		else
+		{
+			s = Status("server_error");
+		}
+	}
+	return s;
+}
+
 static Status read_str(SSDBProtocolResponse *response, std::string *ret)
 {
     Status status = response->getStatus();
@@ -676,6 +695,16 @@ Status SSDBClient::setx(const std::string& key, const std::string& val, int ttl)
 
 	request(m_request->getResult(), m_request->getResultLen());
 	return m_reponse->getStatus();
+}
+
+Status SSDBClient::setnx(const std::string& key, const std::string& val, int *reply)
+{
+	m_request->appendStr("setnx");
+	m_request->appendStr(key);
+	m_request->appendStr(val);
+	m_request->endl();
+	request(m_request->getResult(), m_request->getResultLen());
+	return read_int(m_reponse, reply);
 }
 
 Status SSDBClient::get(const std::string& key, std::string *val)

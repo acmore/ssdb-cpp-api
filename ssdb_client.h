@@ -74,6 +74,7 @@ public:
 
     Status                  set(const std::string& key, const std::string& val);
 	Status					setx(const std::string& key, const std::string& val, int ttl);
+	Status					setnx(const std::string& key, const std::string& val, int *reply);
     Status                  get(const std::string& key, std::string *val);
 	Status					del(const std::string& key);
 	Status					multi_get(const std::vector<std::string>& keys, std::map<std::string, std::string> *ret);

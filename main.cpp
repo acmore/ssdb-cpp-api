@@ -176,6 +176,15 @@ void test_multihash(SSDBClient &client)
 	}
 }
 
+void test_setnx(SSDBClient &client)
+{
+	string key("key_not_exist1");
+	string value("key_exist");
+	int existed = 0;
+	Status s = client.setnx(key, value, &existed);
+	std::cout << s.code() << ", existed=" << existed << std::endl;
+}
+
 int main()
 {	
 	SSDBClient client;
@@ -189,6 +198,8 @@ int main()
 	test_multikvs(client);
 	test_hash(client);
 	test_multihash(client);
+
+	test_setnx(client);
 
     return 0;
 }
