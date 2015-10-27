@@ -285,11 +285,26 @@ static Status read_list(SSDBProtocolResponse *response, std::vector<std::string>
         for (size_t i = 1; i < response->getBuffersLen(); ++i)
         {
             Bytes* buffer = response->getByIndex(i);
-            ret->push_back(string(buffer->buffer, buffer->len));
+			ret->push_back(std::string(buffer->buffer, buffer->len));
         }
     }
 
     return status;
+}
+
+static Status read_map(SSDBProtocolResponse *response, std::map<std::string, std::string> *ret)
+{
+	Status s = response->getStatus();
+	if (s.ok())
+	{
+		for (size_t i = 1; i < response->getBuffersLen(); i += 2)
+		{
+			Bytes *key = response->getByIndex(i);
+			Bytes *value = response->getByIndex(i+1);
+			ret->insert(std::make_pair(std::string(key->buffer, key->len), std::string(value->buffer, value->len)));
+		}
+	}
+	return s;
 }
 
 static Status read_int64(SSDBProtocolResponse *response, int64_t *ret)
@@ -524,6 +539,43 @@ Status SSDBClient::del(const std::string& key)
 	return m_reponse->getStatus();
 }
 
+Status SSDBClient::multi_get(const std::vector<std::string>& keys, std::map<std::string, std::string> *ret)
+{
+	m_request->appendStr("multi_get");
+	for (size_t i = 0; i < keys.size(); i++)
+	{
+		m_request->appendStr(keys[i]);
+	}
+	m_request->endl();
+	request(m_request->getResult(), m_request->getResultLen());
+	return read_map(m_reponse, ret);
+}
+
+Status SSDBClient::multi_set(const std::map<std::string, std::string>& kvs)
+{
+	m_request->appendStr("multi_set");
+	for (std::map<std::string, std::string>::const_iterator iter = kvs.begin(); iter != kvs.end(); ++iter)
+	{
+		m_request->appendStr(iter->first);
+		m_request->appendStr(iter->second);
+	}
+	m_request->endl();
+	request(m_request->getResult(), m_request->getResultLen());
+	return m_reponse->getStatus();
+}
+
+Status SSDBClient::multi_del(const std::vector<std::string>& keys)
+{
+	m_request->appendStr("multi_del");
+	for (size_t i = 0; i < keys.size(); i++)
+	{
+		m_request->appendStr(keys[i]);
+	}
+	m_request->endl();
+	request(m_request->getResult(), m_request->getResultLen());
+	return m_reponse->getStatus();
+}
+
 Status SSDBClient::hset(const std::string& name, const std::string& key, std::string val)
 {
     m_request->appendStr("hset");
@@ -537,7 +589,7 @@ Status SSDBClient::hset(const std::string& name, const std::string& key, std::st
     return m_reponse->getStatus();
 }
 
-Status SSDBClient::multiHset(const std::string& name, const std::map<std::string, std::string> &kvs)
+Status SSDBClient::multi_hset(const std::string& name, const std::map<std::string, std::string> &kvs)
 {
     m_request->appendStr("multi_hset");
     m_request->appendStr(name);
@@ -565,7 +617,7 @@ Status SSDBClient::hget(const std::string& name, const std::string& key, std::st
     return read_str(m_reponse, val);
 }
 
-Status SSDBClient::multiHget(const std::string& name, const std::vector<std::string> &keys, std::vector<std::string> *ret)
+Status SSDBClient::multi_hget(const std::string& name, const std::vector<std::string> &keys, std::map<std::string, std::string> *ret)
 {
     m_request->appendStr("multi_hget");
     m_request->appendStr(name);
@@ -577,7 +629,7 @@ Status SSDBClient::multiHget(const std::string& name, const std::vector<std::str
 
     request(m_request->getResult(), m_request->getResultLen());
 
-    return read_list(m_reponse, ret);
+    return read_map(m_reponse, ret);
 }
 
 Status SSDBClient::zset(const std::string& name, const std::string& key, int64_t score)

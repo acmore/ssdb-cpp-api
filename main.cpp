@@ -1,6 +1,7 @@
 #include "platform.h"
 #include <string>
 #include <iostream>
+#include <map>
 
 #include "ssdb_client.h"
 
@@ -70,6 +71,44 @@ void test_kv(SSDBClient &client)
 	}
 }
 
+void test_multikvs(SSDBClient &client)
+{
+	// multi_set
+	std::map<std::string, std::string> kvs;
+	kvs.insert(std::make_pair("multi_set_1", "1"));
+	kvs.insert(std::make_pair("multi_set_2", "2"));
+	Status s = client.multi_set(kvs);
+	if (!s.ok())
+	{
+		std::cout << "multi set request fail" << std::endl;
+	}
+	std::vector<std::string> keys;
+	for (std::map<std::string, std::string>::iterator iter = kvs.begin(); iter != kvs.end(); ++iter)
+	{
+		keys.push_back(iter->first);
+	}
+	keys.push_back("key_not_exist");
+	std::map<std::string, std::string> values;
+	s = client.multi_get(keys, &values);
+	if (!s.ok() || s.not_found())
+	{
+		std::cout << "multi get request fail" << std::endl;
+	}
+	for (size_t i = 0; i < keys.size(); i++)
+	{
+		if (kvs[keys[i]] != values[keys[i]])
+		{
+			std::cout << "multi set value fail " << keys[i] << " " << kvs[keys[i]] << " " << values[keys[i]] << std::endl;
+			return;
+		}
+	}
+	s = client.multi_del(keys);
+	if (!s.ok())
+	{
+		std::cout << "multi del request fail" << std::endl;
+	}
+}
+
 void test_hash(SSDBClient &client)
 {
 	string key("test_hash");
@@ -95,12 +134,49 @@ void test_hash(SSDBClient &client)
 	}
 }
 
+void test_multihash(SSDBClient &client)
+{
+	std::string name("test_multihash");
+	std::map<std::string, std::string> kvs;
+	kvs.insert(std::make_pair("hash1", "5"));
+	kvs.insert(std::make_pair("hash2", "6"));
+	kvs.insert(std::make_pair("hash3", "7"));
+	Status s = client.multi_hset(name, kvs);
+	if (!s.ok())
+	{
+		std::cout << "multi hset request fail" << std::endl;
+		return;
+	}
+	std::map<std::string, std::string> values;
+	std::vector<std::string> keys;
+	for (std::map<std::string, std::string>::iterator iter = kvs.begin(); iter != kvs.end(); ++iter)
+	{
+		keys.push_back(iter->first);
+	}
+	s = client.multi_hget(name, keys, &values);
+	if (!s.ok())
+	{
+		std::cout << "multi hget request fail" << std::endl;
+		return;
+	}
+	for (size_t i = 0; i < keys.size(); i++)
+	{
+		if (kvs[keys[i]] != values[keys[i]])
+		{
+			std::cout << "multi hset value fail " << keys[i] << " " << kvs[keys[i]] << " " << values[keys[i]] << std::endl;
+			return;
+		}
+	}
+}
+
 int main()
 {	
 	SSDBClient client;
 	client.connect("203.116.50.232", 8888);
 	test_kv(client);
+	test_multikvs(client);
 	test_hash(client);
+	test_multihash(client);
 
     return 0;
 }

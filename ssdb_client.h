@@ -76,11 +76,14 @@ public:
 	Status					setx(const std::string& key, const std::string& val, int ttl);
     Status                  get(const std::string& key, std::string *val);
 	Status					del(const std::string& key);
+	Status					multi_get(const std::vector<std::string>& keys, std::map<std::string, std::string> *ret);
+	Status					multi_set(const std::map<std::string, std::string>& kvs);
+	Status					multi_del(const std::vector<std::string>& keys);
 
     Status                  hset(const std::string& name, const std::string& key, std::string val);
-	Status                  multiHset(const std::string& name, const std::map<std::string, std::string> &kvs);
+	Status                  multi_hset(const std::string& name, const std::map<std::string, std::string> &kvs);
     Status                  hget(const std::string& name, const std::string& key, std::string *val);
-    Status                  multiHget(const std::string& name, const std::vector<std::string> &keys, std::vector<std::string> *ret);
+	Status                  multi_hget(const std::string& name, const std::vector<std::string> &keys, std::map<std::string, std::string> *ret);
 
     Status                  zset(const std::string& name, const std::string& key, int64_t score);
 
