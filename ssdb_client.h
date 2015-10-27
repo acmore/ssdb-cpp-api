@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 
-#ifdef PLATFORM_WINDOWS
+#if defined _MSC_VER || defined _WIN32 || defined __MINGW32__
 typedef char int8_t;
 typedef unsigned char uint8_t;
 typedef unsigned char byte;
