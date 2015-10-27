@@ -66,9 +66,9 @@ public:
     SSDBClient();
     ~SSDBClient();
 
-    void                    disConnect();
+    void                    disconnect();
     void                    connect(const char* ip, int port, uint timeoutSec=5);
-    bool                    isConnect() const;
+    bool                    isconnected() const;
 
     void                    execute(const char* str, int len);
 
@@ -122,6 +122,7 @@ private:
 
     std::string             m_ip;
     int                     m_port;
+	uint					m_timeout;
 };
 
 #endif

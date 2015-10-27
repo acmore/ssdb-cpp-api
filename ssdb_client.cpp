@@ -502,6 +502,11 @@ static Status read_str(SSDBProtocolResponse *response, std::string *ret)
 
 void SSDBClient::request(const char* buffer, int len)
 {
+	if (!isconnected())
+	{
+		disconnect();
+		connect(m_ip.c_str(), m_port, m_timeout);
+	}
     m_reponse->init();
 
     int left_len = send(buffer, len);
@@ -614,7 +619,7 @@ SSDBClient::~SSDBClient()
 #endif
 }
 
-void SSDBClient::disConnect()
+void SSDBClient::disconnect()
 {
     if (m_socket != SOCKET_ERROR)
     {
@@ -636,10 +641,11 @@ void SSDBClient::connect(const char* ip, int port, uint timeoutSec)
 
         m_ip = ip;
         m_port = port;
+		m_timeout = timeoutSec;
     }
 }
 
-bool SSDBClient::isConnect() const
+bool SSDBClient::isconnected() const
 {
     return m_socket != SOCKET_ERROR;
 }
