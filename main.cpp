@@ -17,7 +17,7 @@ void test_kv(SSDBClient &client)
 	{
 		std::cout << "setx should be fine" << std::endl;
 	}
-	else
+	else if (s.ok())
 	{
 		std::cout << "key existed" << std::endl;
 		s = client.del(key);
@@ -26,6 +26,11 @@ void test_kv(SSDBClient &client)
 			std::cout << "delete existing key failed" << std::endl;
 			return;
 		}
+	}
+	else
+	{
+		std::cout << "connection error" << std::endl;
+		return;
 	}
 	s = client.set(key, value);
 	if (!s.ok())
@@ -81,6 +86,7 @@ void test_multikvs(SSDBClient &client)
 	if (!s.ok())
 	{
 		std::cout << "multi set request fail" << std::endl;
+		return;
 	}
 	std::vector<std::string> keys;
 	for (std::map<std::string, std::string>::iterator iter = kvs.begin(); iter != kvs.end(); ++iter)
@@ -93,6 +99,7 @@ void test_multikvs(SSDBClient &client)
 	if (!s.ok() || s.not_found())
 	{
 		std::cout << "multi get request fail" << std::endl;
+		return;
 	}
 	for (size_t i = 0; i < keys.size(); i++)
 	{
@@ -173,6 +180,11 @@ int main()
 {	
 	SSDBClient client;
 	client.connect("203.116.50.232", 8888);
+	if (!client.isconnected())
+	{
+		std::cout << "not connected" << std::endl;
+		return 0;
+	}
 	test_kv(client);
 	test_multikvs(client);
 	test_hash(client);
