@@ -73,6 +73,54 @@ static bool ox_socket_keepalive(sock socket, uint timeout, uint interval, uint p
 	return true;
 }
 
+static bool ox_socket_set_block(sock socket, bool block)
+{
+#ifdef _WIN32
+	u_long nonblock = block ? 0 : 1;
+	return ioctlsocket(socket, FIONBIO, &nonblock) == 0;
+#else
+	int flag = fcntl(socket, F_GETFL, 0);
+	if(block)
+	{
+		flag &= (~O_NONBLOCK);
+		flag &= (~O_NDELAY);
+	}
+	else
+	{
+		flag |= O_NONBLOCK;
+		flag |= O_NDELAY;
+	}
+	return fcntl(socket, F_SETFL, flag) != -1;
+#endif
+}
+
+static bool ox_socket_set_timeout(sock socket, uint timeoutSec)
+{
+#ifdef _WIN32
+	int timeout = timeoutSec * 1000;
+#else
+	timeval timeout = { timeoutSec, 0 };
+#endif
+	if(setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, (const char *)&timeout, sizeof(timeout)) == SOCKET_ERROR)
+	{
+		return false;
+	}
+	if(setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof(timeout)) == SOCKET_ERROR)
+	{
+		return false;
+	}
+	return true;
+}
+
+int ox_get_last_error()
+{
+#ifdef _WIN32
+	return WSAGetLastError();
+#else
+	return errno;
+#endif
+}
+
 static void
 ox_socket_close(sock fd)
 {
@@ -84,7 +132,7 @@ ox_socket_close(sock fd)
 }
 
 static sock
-ox_socket_connect(const char* server_ip, int port)
+ox_socket_connect(const char* server_ip, int port, uint timeoutSec=10)
 {
     struct sockaddr_in server_addr;
     sock clientfd = SOCKET_ERROR;
@@ -92,21 +140,83 @@ ox_socket_connect(const char* server_ip, int port)
     ox_socket_init();
 
     clientfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (clientfd == SOCKET_ERROR)
+	{
+		return clientfd;
+	}
+	if (!ox_socket_set_block(clientfd, false))
+	{
+		ox_socket_close(clientfd);
+		return SOCKET_ERROR;
+	}
 
-    if(clientfd != SOCKET_ERROR)
-    {
-        server_addr.sin_family = AF_INET;
-        server_addr.sin_addr.s_addr = inet_addr(server_ip);
-        server_addr.sin_port = htons(port);
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = inet_addr(server_ip);
+	server_addr.sin_port = htons(port);
 
-        while(connect(clientfd, (struct sockaddr*)&server_addr, sizeof(struct sockaddr)) < 0)
-        {
-            if(EINTR == sErrno)
-            {
-                continue;
-            }
-        }
-    }
+	if (connect(clientfd, (struct sockaddr*)&server_addr, sizeof(struct sockaddr)) == SOCKET_ERROR)
+	{
+		int error = ox_get_last_error();
+#ifdef PLATFORM_WINDOWS
+		if (error != WSAEWOULDBLOCK)
+#else
+		if (error != EINPROGRESS)
+#endif
+		{
+			ox_socket_close(clientfd);
+			return SOCKET_ERROR;
+		}
+		fd_set fdsWrite;
+		FD_ZERO(&fdsWrite);
+		FD_SET(clientfd, &fdsWrite);
+		fd_set fdsExcept;
+		FD_ZERO(&fdsExcept);
+		FD_SET(clientfd, &fdsExcept);
+		timeval timeout = { timeoutSec, 0 };
+#ifdef PLATFORM_WINDOWS
+		int ret = select(0, NULL, &fdsWrite, &fdsExcept, &timeout);
+#else
+		int ret = select(clientfd + 1, NULL, &fdsWrite, &fdsExcept, &timeout);
+#endif
+		if(ret > 0)
+		{
+#ifdef PLATFORM_WINDOWS
+			int errorLength = sizeof(error);
+#else
+			socklen_t errorLength = sizeof(error);
+#endif
+			if(getsockopt(clientfd, SOL_SOCKET, SO_ERROR, (char *)&error, &errorLength) == SOCKET_ERROR)
+			{
+				ox_socket_close(clientfd);
+				return SOCKET_ERROR;
+			}
+			if(error != 0)
+			{
+				ox_socket_close(clientfd);
+				return SOCKET_ERROR;
+			}
+		}
+		else if(ret == 0)
+		{
+			ox_socket_close(clientfd);
+			return SOCKET_ERROR;
+		}
+		else
+		{
+			ox_socket_close(clientfd);
+			return SOCKET_ERROR;
+		}
+	}
+	if (!ox_socket_set_block(clientfd, true))
+	{
+		ox_socket_close(clientfd);
+		return SOCKET_ERROR;
+	}
+	if (!ox_socket_set_timeout(clientfd, timeoutSec))
+	{
+		ox_socket_close(clientfd);
+		return SOCKET_ERROR;
+	}
 
     return clientfd;
 }
@@ -513,11 +623,11 @@ void SSDBClient::disConnect()
     }
 }
 
-void SSDBClient::connect(const char* ip, int port)
+void SSDBClient::connect(const char* ip, int port, uint timeoutSec)
 {
     if(m_socket == SOCKET_ERROR)
     {
-        m_socket = (int)ox_socket_connect(ip, port);
+        m_socket = (int)ox_socket_connect(ip, port, timeoutSec);
         if(m_socket != SOCKET_ERROR)
         {
             ox_socket_nodelay(m_socket);

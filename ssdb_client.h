@@ -67,7 +67,7 @@ public:
     ~SSDBClient();
 
     void                    disConnect();
-    void                    connect(const char* ip, int port);
+    void                    connect(const char* ip, int port, uint timeoutSec=5);
     bool                    isConnect() const;
 
     void                    execute(const char* str, int len);
