@@ -647,7 +647,7 @@ void SSDBClient::disconnect()
     }
 }
 
-void SSDBClient::connect(const char* ip, int port, uint timeoutSec)
+void SSDBClient::connect(const char* ip, int port, uint32_t timeoutSec)
 {
     if(m_socket == SOCKET_ERROR)
     {
@@ -761,6 +761,15 @@ Status SSDBClient::multi_del(const std::vector<std::string>& keys)
 	{
 		m_request->appendStr(keys[i]);
 	}
+	m_request->endl();
+	request(m_request->getResult(), m_request->getResultLen());
+	return m_reponse->getStatus();
+}
+
+Status SSDBClient::expire(const std::string& key, int ttl)
+{
+	m_request->appendStr("expire");
+	m_request->appendInt32(ttl);
 	m_request->endl();
 	request(m_request->getResult(), m_request->getResultLen());
 	return m_reponse->getStatus();

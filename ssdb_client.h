@@ -67,7 +67,7 @@ public:
     ~SSDBClient();
 
     void                    disconnect();
-    void                    connect(const char* ip, int port, uint timeoutSec=5);
+    void                    connect(const char* ip, int port, uint32_t timeoutSec=5);
     bool                    isconnected() const;
 
     void                    execute(const char* str, int len);
@@ -80,6 +80,7 @@ public:
 	Status					multi_get(const std::vector<std::string>& keys, std::map<std::string, std::string> *ret);
 	Status					multi_set(const std::map<std::string, std::string>& kvs);
 	Status					multi_del(const std::vector<std::string>& keys);
+	Status					expire(const std::string& key, int ttl);
 
     Status                  hset(const std::string& name, const std::string& key, std::string val);
 	Status                  multi_hset(const std::string& name, const std::map<std::string, std::string> &kvs);
@@ -123,7 +124,7 @@ private:
 
     std::string             m_ip;
     int                     m_port;
-	uint					m_timeout;
+	uint32_t					m_timeout;
 };
 
 #endif
