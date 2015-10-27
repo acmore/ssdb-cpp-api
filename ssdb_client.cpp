@@ -9,7 +9,10 @@
 #include "ssdb_client.h"
 
 #ifdef PLATFORM_WINDOWS
+#include <MSTcpIP.h>
 #pragma comment(lib,"ws2_32.lib")
+#else
+#include <netinet/tcp.h>
 #endif
 
 #if defined PLATFORM_WINDOWS
@@ -17,6 +20,10 @@
 #endif
 
 #define DEFAULT_SSDBPROTOCOL_LEN 1024
+
+static const uint KEEP_ALIVE_TIMEOUT = 30;
+static const uint KEEP_ALIVE_INTERVAL = 3;
+static const uint KEEP_ALIVE_PROBES = 10;
 
 using namespace std;
 
@@ -27,6 +34,43 @@ ox_socket_init(void)
     static WSADATA g_WSAData;
     WSAStartup(MAKEWORD(2,2), &g_WSAData);
 #endif
+}
+
+static bool ox_socket_keepalive(sock socket, uint timeout, uint interval, uint probes)
+{
+#ifdef PLATFORM_WINDOWS
+	tcp_keepalive tcpKeepAlive;
+	tcpKeepAlive.onoff = 1;
+	tcpKeepAlive.keepalivetime = timeout * 1000;
+	tcpKeepAlive.keepaliveinterval = interval * 1000;
+	DWORD dwBytesRet = 0; 
+	int result = WSAIoctl(
+		socket,
+		SIO_KEEPALIVE_VALS,
+		&tcpKeepAlive,
+		sizeof(tcpKeepAlive),
+		NULL,
+		0,
+		&dwBytesRet,
+		NULL,
+		NULL
+		);
+	if(result != 0)
+	{
+		return false;
+	}
+#else
+	int hSocket = (int)socket;
+	int enable = 1;
+	if(setsockopt(hSocket, SOL_SOCKET, SO_KEEPALIVE, (void *)&enable, sizeof(enable)) != 0)
+	{
+		return false;
+	}
+	setsockopt(hSocket, SOL_TCP, TCP_KEEPIDLE, (void *)&timeout, sizeof(timeout));
+	setsockopt(hSocket, SOL_TCP, TCP_KEEPINTVL, (void *)&interval, sizeof(interval));
+	setsockopt(hSocket, SOL_TCP, TCP_KEEPCNT, (void *)&probes, sizeof(probes));
+#endif
+	return true;
 }
 
 static void
@@ -477,6 +521,7 @@ void SSDBClient::connect(const char* ip, int port)
         if(m_socket != SOCKET_ERROR)
         {
             ox_socket_nodelay(m_socket);
+			ox_socket_keepalive(m_socket, KEEP_ALIVE_TIMEOUT, KEEP_ALIVE_INTERVAL, KEEP_ALIVE_PROBES);
         }
 
         m_ip = ip;
