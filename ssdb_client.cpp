@@ -775,6 +775,15 @@ Status SSDBClient::expire(const std::string& key, int ttl)
 	return m_reponse->getStatus();
 }
 
+Status SSDBClient::exists(const std::string& key, int *ret)
+{
+	m_request->appendStr("exists");
+	m_request->appendStr(key);
+	m_request->endl();
+	request(m_request->getResult(), m_request->getResultLen());
+	return read_int(m_reponse, ret);
+}
+
 Status SSDBClient::hset(const std::string& name, const std::string& key, std::string val)
 {
     m_request->appendStr("hset");

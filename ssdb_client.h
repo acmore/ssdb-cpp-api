@@ -81,6 +81,7 @@ public:
 	Status					multi_set(const std::map<std::string, std::string>& kvs);
 	Status					multi_del(const std::vector<std::string>& keys);
 	Status					expire(const std::string& key, int ttl);
+	Status					exists(const std::string& key, int *ret);
 
     Status                  hset(const std::string& name, const std::string& key, std::string val);
 	Status                  multi_hset(const std::string& name, const std::map<std::string, std::string> &kvs);
